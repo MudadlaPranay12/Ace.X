@@ -1,0 +1,114 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+}
+
+/* Response bubble overrides (inline styles take precedence for layout) */
+#responseBubble { min-width: 0; }
+
+/* Chat panel */
+#eveChat {
+  position: fixed;
+  inset: 36px 6px 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: #151a22f5;
+  border: 1px solid #536071;
+  border-radius: 8px;
+  padding: 8px;
+  color: #e0e6ed;
+  font: 12px/1.5 'Segoe UI', sans-serif;
+  -webkit-app-region: no-drag;
+}
+#eveChat header { display: flex; justify-content: space-between; align-items: center; }
+#chatHistory { flex: 1; min-height: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+#chatHistory > div { padding: 8px 0; border-bottom: 1px solid #ffffff18; }
+#chatHistory .chat-error { color: #ffb4b4; }
+.chat-code-wrap { position: relative; margin: 6px 0; padding-top: 22px; }
+.chat-code { margin: 0; padding: 8px; overflow: auto; max-height: 180px; background: #0c1118; border: 1px solid #3b4655; border-radius: 4px; color: #d7f7ff; font: 11px/1.45 Consolas, 'Cascadia Code', monospace; white-space: pre; }
+.chat-copy { position: absolute; top: 0; right: 0; font-size: 10px; padding: 2px 6px !important; }
+#chatForm { display: flex; gap: 4px; margin-top: 6px; }
+#chatInput { width: 100%; min-width: 0; resize: vertical; background: #202733; color: #eee; border: 1px solid #667080; }
+#eveChat button, #chatToggle { background: #253449; color: #e0e6ed; border: 1px solid #536071; border-radius: 4px; padding: 4px; cursor: pointer; -webkit-app-region: no-drag; }
+#eveChat button:disabled { opacity: .5; }
+#eveChat button:focus-visible, #chatInput:focus-visible, #chatToggle:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+
+/* Top-bar action cluster (minimize + chat): no-drag so buttons stay clickable */
+.top-actions { display: flex; gap: 6px; align-items: center; -webkit-app-region: no-drag; }
+#minimizeBtn {
+  background: transparent; color: #8a9fb3;
+  border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 6px;
+  font-size: 12px; line-height: 1; padding: 4px 9px; cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+#minimizeBtn:hover { background: rgba(0, 242, 254, 0.15); color: #d7e3ea; }
+#minimizeBtn:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+
+/* ---------------------------------------------------------------------------
+ * Eve Mini: circular floating face (mini mode only).
+ * The outer ring is the drag handle; the face itself is one real <button>
+ * (clickable, Tab-focusable, Enter/Space activate). One static soft glow,
+ * transform-only blink — no continuous expensive effects in mini mode.
+ * ------------------------------------------------------------------------- */
+#miniView {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  -webkit-app-region: drag;
+}
+#miniView.hidden { display: none !important; }
+#miniRing { position: relative; width: 72px; height: 72px; -webkit-app-region: drag; }
+#miniFace {
+  position: absolute; inset: 6px;
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 1px solid rgba(0, 242, 254, 0.55);
+  background: radial-gradient(circle at 50% 38%, #1b2735 0%, #0d141d 62%, #070b11 100%);
+  cursor: pointer; padding: 0;
+  -webkit-app-region: no-drag;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+}
+#miniFace:hover { box-shadow: 0 0 14px rgba(0, 242, 254, 0.45); }
+#miniFace:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+.mini-eye {
+  position: absolute; top: 20px; width: 8px; height: 11px; border-radius: 50%;
+  background: #00f2fe; box-shadow: 0 0 6px rgba(0, 242, 254, 0.8);
+  animation: miniBlink 4.6s infinite; transform-origin: center;
+}
+.mini-eye.left { left: 16px; }
+.mini-eye.right { right: 16px; }
+@keyframes miniBlink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95.5% { transform: scaleY(0.08); }
+}
+#miniFace.err .mini-eye { background: #f14c4c; box-shadow: 0 0 6px rgba(241, 76, 76, 0.8); }
+.mini-mouth {
+  position: absolute; left: 50%; bottom: 14px; width: 16px; height: 7px;
+  transform: translateX(-50%);
+  border-bottom: 2px solid rgba(0, 242, 254, 0.7);
+  border-radius: 0 0 12px 12px;
+}
+.mini-dot {
+  position: absolute; right: 4px; bottom: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #8a93a2; border: 2px solid #0d1117;
+}
+.mini-dot.connected { background: #00e676; }
+.mini-dot.connecting { background: #ffb703; }
+
+/* While mini, full-mode fixed surfaces (popup bar, chat) are force-hidden:
+ * they are laid out for a 240px+ window and render degenerately at 72px.
+ * Hiding is presentation-only — Brain state, chat history and the issue
+ * frame are untouched and re-render on expand. */
+body.eve-mini #responseBubble,
+body.eve-mini #eveChat {
+  display: none !important;
+}

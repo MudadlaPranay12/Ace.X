@@ -1,0 +1,59 @@
+{
+  "name": "botx-companion",
+  "displayName": "BotX 3D Companion",
+  "description": "Floating 3D Eve companion window driven by the BotX VS Code extension",
+  "publisher": "botx-dev",
+  "version": "1.0.0",
+  "categories": [
+    "Other"
+  ],
+  "main": "./main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/**/*.test.js\"",
+    "vendor": "node vendor.js",
+    "package:body": "npm run vendor && electron-builder --win --x64 --dir"
+  },
+  "build": {
+    "appId": "dev.botx.companion",
+    "productName": "BotX Companion",
+    "asar": true,
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US"
+    ],
+    "files": [
+      "!node_modules/**/*",
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "wsClient.js",
+      "messageParser.js",
+      "geometry.js",
+      "index.html",
+      "styles.css",
+      "assets/**/*",
+      "vendor/**/*",
+      "behaviour/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "44.2.0",
+    "electron-builder": "^26.0.12",
+    "sharp": "^0.35.5",
+    "three": "0.160.1"
+  }
+}

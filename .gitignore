@@ -1,0 +1,53 @@
+﻿# Dependencies
+node_modules/
+**/node_modules/
+
+# Generated builds
+dist/
+**/dist/
+out/
+**/out/
+.vscode-test/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Extracted packages and generated archives
+extracted-vsix*/
+**/extracted-vsix*/
+*.vsix
+*.asar
+*.zip
+
+# Local caches and temporary debugging
+robot-body/data-cache/
+.freebuff/
+robot-body/analyze-*.js
+robot-body/main-debug-*.js
+robot-body/main-capture-*.js
+robot-body/main-interaction-test.js
+robot-body/main-reconnect-test.js
+robot-body/main-screenshot*.js
+robot-body/main-test.js
+robot-body/main-timed-sequence.js
+robot-body/main-visual-test.js
+robot-body/gesture-captures*/
+
+# Test captures
+robot-body/test-*.png
+robot-body/interaction-*.png
+robot-body/eve-screenshot*.png
+
+# Operating system files
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary gesture capture script
+robot-body/main-gesture-capture.js

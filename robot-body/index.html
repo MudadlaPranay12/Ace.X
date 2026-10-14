@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ace.X — Eve</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+
+    /* Layout: top bar → 3D viewport → bottom response area */
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+
+    /* Top bar: status (left) + chat button (right) */
+    #topBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 34px;
+      padding: 0 12px;
+      background: linear-gradient(180deg, rgba(13, 17, 23, 0.98), rgba(13, 17, 23, 0.85));
+      border-bottom: 1px solid rgba(0, 242, 254, 0.18);
+      -webkit-app-region: drag;
+      user-select: none;
+      z-index: 10;
+    }
+
+    #statusIndicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(13, 17, 23, 0.6);
+      border: 1px solid rgba(64, 74, 92, 0.5);
+      border-radius: 8px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #8a93a2;
+      pointer-events: none;
+      user-select: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #statusIndicator .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #6b7382;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    #statusIndicator.connected .dot { background: #00e676; box-shadow: 0 0 6px rgba(0, 230, 118, 0.7); }
+    #statusIndicator.connected { color: #9fe8b9; border-color: rgba(0, 230, 118, 0.3); }
+    #statusIndicator.connecting .dot { background: #ffb703; animation: pulse 1.1s ease-in-out infinite; }
+    #statusIndicator.disconnected .dot { background: #8a93a2; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    #chatToggle {
+      -webkit-app-region: no-drag;
+      padding: 5px 10px;
+      background: linear-gradient(135deg, #00f2fe, #00c8d8);
+      color: #0d1117;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 8.5px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    #chatToggle:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 242, 254, 0.4); filter: brightness(1.1); }
+    #chatToggle:active { transform: translateY(0); }
+    #chatToggle:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+
+    /* 3D Viewport: fills remaining space, canvas covers it */
+    #viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      padding-top: 8px;
+    }
+    #robotCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      -webkit-app-region: drag;
+      cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Eve popup bar — bottom center, above viewport bottom edge */
+    #responseBubble {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 12px;
+      width: auto;
+      min-width: 200px;
+      max-width: min(92%, 340px);
+      max-height: 40%;
+      overflow-y: auto;
+      padding: 0;
+      background: rgba(13, 17, 23, 0.95);
+      border: 1px solid rgba(0, 242, 254, 0.45);
+      border-left: 3px solid #00f2fe;
+      border-radius: 14px;
+      box-shadow:
+        0 0 20px rgba(0, 242, 254, 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.4);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #d7e3ea;
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 0.25s ease,
+        transform 0.25s ease,
+        visibility 0.25s ease;
+      z-index: 30;
+      pointer-events: none;
+    }
+    #responseBubble.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      -webkit-app-region: no-drag;
+    }
+    #responseBubble.sev-error { border-left-color: #f14c4c; }
+    #responseBubble.sev-warning { border-left-color: #cca700; }
+    #responseBubble.sev-success { border-left-color: #3fb950; }
+
+    .bubble-inner { padding: 10px 12px; }
+
+    .bubble-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px; padding-bottom: 6px;
+      border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+    }
+
+    .bubble-state {
+      font-size: 8px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; color: #00f2fe; white-space: nowrap;
+    }
+    #responseBubble.sev-error .bubble-state { color: #f14c4c; }
+    #responseBubble.sev-warning .bubble-state { color: #cca700; }
+    #responseBubble.sev-success .bubble-state { color: #3fb950; }
+
+    .bubble-type {
+      font-size: 8px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase; color: #6b8a9a; white-space: nowrap;
+    }
+
+    .bubble-file {
+      font-size: 10px; color: #8a9fb3; font-family: Consolas, monospace;
+      margin-bottom: 4px; word-break: break-all;
+    }
+
+    .bubble-text {
+      font-size: 11px; font-weight: 400; line-height: 1.5;
+      color: #cddce4; white-space: pre-wrap; word-wrap: break-word;
+    }
+
+    .bubble-details {
+      font-size: 10.5px; line-height: 1.5; color: #8a9fb3;
+      white-space: pre-wrap; word-wrap: break-word;
+      margin-top: 6px; padding-top: 6px;
+      border-top: 1px solid rgba(0, 242, 254, 0.12);
+    }
+
+    .bubble-voice {
+      font-size: 10px; color: #00f2fe; margin-top: 6px; min-height: 0;
+    }
+    .bubble-voice:empty { display: none; }
+    .bubble-voice.listening { color: #ff5d5d; }
+    .bubble-voice.error { color: #cca700; }
+
+    .bubble-actions {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 10px; padding-top: 8px;
+      border-top: 1px solid rgba(0, 242, 254, 0.12);
+      align-items: center;
+    }
+
+    .bubble-btn {
+      padding: 5px 10px; font-size: 9px; font-weight: 600; letter-spacing: 0.4px;
+      text-transform: uppercase; color: #0d1117;
+      background: linear-gradient(135deg, #00f2fe, #00c8d8);
+      border: none; border-radius: 6px; cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      white-space: nowrap; -webkit-app-region: no-drag;
+    }
+    .bubble-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 242, 254, 0.4); filter: brightness(1.1); }
+    .bubble-btn:active { transform: translateY(0); }
+    .bubble-btn:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+
+    .bubble-btn.secondary {
+      background: transparent; color: #8a9fb3;
+      border: 1px solid rgba(0, 242, 254, 0.3);
+    }
+
+    .mic-btn {
+      margin-left: auto; width: 26px; height: 26px; flex: none;
+      border-radius: 50%; border: 1px solid rgba(0, 242, 254, 0.45);
+      background: transparent; color: #d7e3ea; font-size: 13px; line-height: 1;
+      cursor: pointer; -webkit-app-region: no-drag;
+    }
+    .mic-btn:hover { background: rgba(0, 242, 254, 0.15); }
+    .mic-btn.listening { border-color: #ff5d5d; color: #ff5d5d; animation: micPulse 1.1s ease-in-out infinite; }
+    .mic-btn:disabled { opacity: .4; cursor: default; }
+    @keyframes micPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+    /* Chat panel */
+    #eveChat {
+      position: fixed; inset: 36px 6px 6px; z-index: 50;
+      display: flex; flex-direction: column;
+      background: #151a22f5; border: 1px solid #536071;
+      border-radius: 8px; padding: 8px; color: #e0e6ed;
+      font: 12px/1.5 'Segoe UI', sans-serif; -webkit-app-region: no-drag;
+    }
+    #eveChat header { display: flex; justify-content: space-between; align-items: center; }
+    #chatHistory { flex: 1; min-height: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #chatHistory > div { padding: 8px 0; border-bottom: 1px solid #ffffff18; }
+    #chatHistory .chat-error { color: #ffb4b4; }
+    .chat-code-wrap { position: relative; margin: 6px 0; padding-top: 22px; }
+    .chat-code { margin: 0; padding: 8px; overflow: auto; max-height: 180px; background: #0c1118; border: 1px solid #3b4655; border-radius: 4px; color: #d7f7ff; font: 11px/1.45 Consolas, 'Cascadia Code', monospace; white-space: pre; }
+    .chat-copy { position: absolute; top: 0; right: 0; font-size: 10px; padding: 2px 6px !important; }
+    #chatForm { display: flex; gap: 4px; margin-top: 6px; }
+    #chatInput { width: 100%; min-width: 0; resize: vertical; background: #202733; color: #eee; border: 1px solid #667080; }
+    #eveChat button, #chatToggle { background: #253449; color: #e0e6ed; border: 1px solid #536071; border-radius: 4px; padding: 4px; cursor: pointer; -webkit-app-region: no-drag; }
+    #eveChat button:disabled { opacity: .5; }
+    #eveChat button:focus-visible, #chatInput:focus-visible, #chatToggle:focus-visible { outline: 2px solid #00f2fe; outline-offset: 2px; }
+
+/* Responsive: wider window */
+@media (min-width: 340px) {
+  #responseBubble { max-width: 320px; }
+}
+</style>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="topBar">
+      <div id="statusIndicator" class="connecting" role="status" aria-live="polite" title="Connection to the VS Code Brain; this does not indicate Gemini availability">
+        <span class="dot"></span><span id="statusText">Linking…</span>
+      </div>
+      <div class="top-actions">
+        <button id="minimizeBtn" aria-label="Minimize Eve to mini face" title="Minimize">–</button>
+        <button id="chatToggle" aria-label="Chat with Eve">Chat</button>
+      </div>
+    </div>
+    <div id="viewport">
+      <canvas id="robotCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Eve Mini: circular face. Visible only in mini mode; #app hides with it.
+       The face is pure CSS (no extra assets); the full 3D interface is untouched. -->
+  <div id="miniView" class="hidden" aria-hidden="true">
+    <div id="miniRing">
+      <button id="miniFace" aria-label="Expand Eve companion">
+        <span class="mini-eye left"></span>
+        <span class="mini-eye right"></span>
+        <span class="mini-mouth"></span>
+      </button>
+      <span id="miniStatus" class="mini-dot disconnected" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <section id="eveChat" class="hidden" aria-label="Chat with Eve">
+    <header>Chat with Eve <button id="chatClose" aria-label="Close chat">×</button></header>
+    <div id="chatHistory" role="log" aria-live="polite" aria-label="Conversation with Eve"><p>Welcome to Ace.X. Try #help or #write py code to check prime. Enter sends; Shift+Enter adds a line. Approvals appear in VS Code.</p></div>
+    <form id="chatForm"><textarea id="chatInput" aria-label="Ask Eve" placeholder="Ask a coding question…" rows="2"></textarea><button id="chatSend" type="submit">Send</button></form>
+  </section>
+
+  <!-- Eve popup bar (the ONE intervention surface) — fixed beneath Eve.
+       Severity, file/line, message, optional details, actions, mic. -->
+  <div id="responseBubble" role="status" aria-live="polite">
+    <div class="bubble-inner">
+      <div class="bubble-header">
+        <span class="bubble-state" id="bubbleState"></span>
+        <span class="bubble-type" id="bubbleType"></span>
+      </div>
+      <div class="bubble-file hidden" id="bubbleFile"></div>
+      <div class="bubble-text" id="bubbleText"></div>
+      <div class="bubble-details hidden" id="bubbleDetails"></div>
+      <div class="bubble-voice" id="bubbleVoice"></div>
+      <div class="bubble-actions" id="bubbleActions"></div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.min.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    window.__BOTX_MODEL_URI__ = './assets/eve.glb';
+  </script>
+  <script>
+  console.log('INLINE SCRIPT: About to load renderer.js module');
+  window.addEventListener('error', (e) => console.log('RENDERER ERROR:', e.message, e.filename, e.lineno));
+  window.addEventListener('unhandledrejection', (e) => console.log('RENDERER UNHANDLED REJECTION:', e.reason));
+  </script>
+<script type="module" src="renderer.js"></script>
+</body>
+</html>

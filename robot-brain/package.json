@@ -1,0 +1,152 @@
+{
+  "publisher": "botx",
+  "name": "robot-brain",
+  "displayName": "Ace.X",
+  "description": "Coding assistance with Gemini, approval-gated edits, local validation, and Eve, a floating 3D companion.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Programming Languages", "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "botx.askCompanion", "title": "Ask Companion", "category": "Ace.X" },
+      { "command": "botx.chatWithEve", "title": "Chat with Eve", "category": "Ace.X" },
+      { "command": "botx.fixWithEve", "title": "Fix with Eve", "category": "Ace.X" },
+      { "command": "botx.replanFix", "title": "Replan Fix with Eve", "category": "Ace.X" },
+      { "command": "botx.showCompanion", "title": "Show Companion", "category": "Ace.X" },
+      { "command": "botx.hideCompanion", "title": "Hide Companion", "category": "Ace.X" },
+      { "command": "botx.restartCompanion", "title": "Restart Companion", "category": "Ace.X" },
+      { "command": "botx.toggleMonitoring", "title": "Toggle Monitoring", "category": "Ace.X" },
+      { "command": "botx.explainError", "title": "Explain Error", "category": "Ace.X" },
+      { "command": "botx.toggleTeachingMode", "title": "Toggle Teaching Mode", "category": "Ace.X" },
+      { "command": "botx.replayTimeline", "title": "Replay Recent Debugging Timeline", "category": "Ace.X" },
+      { "command": "botx.showLearningSummary", "title": "Show Learning Summary", "category": "Ace.X" },
+      { "command": "botx.setApiKey", "title": "Set API Key", "category": "Ace.X" },
+      { "command": "botx.openCompanionPanel", "title": "Open Companion", "category": "Ace.X" },
+      { "command": "botx.setVoice", "title": "Set Voice", "category": "Ace.X" },
+      { "command": "botx.toggleVoice", "title": "Toggle Voice", "category": "Ace.X" },
+      { "command": "acex.openRobot", "title": "Open Eve", "category": "Ace.X" },
+      { "command": "acex.showEve", "title": "Show Eve", "category": "Ace.X" },
+      { "command": "acex.hideEve", "title": "Hide Eve", "category": "Ace.X" },
+      { "command": "acex.focusEve", "title": "Focus Eve", "category": "Ace.X" },
+      { "command": "acex.toggleAlwaysOnTop", "title": "Toggle Eve Always On Top", "category": "Ace.X" },
+      { "command": "acex.resetEvePosition", "title": "Reset Eve Position", "category": "Ace.X" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "botx",
+          "title": "Ace.X",
+          "icon": "media/botx.svg"
+        }
+      ]
+    },
+    "views": {
+      "botx": [
+        {
+          "type": "webview",
+          "id": "botx.companion",
+          "name": "Ace.X Companion"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Ace.X",
+      "properties": {
+        "botx.enableVoice": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable voice output for Eve. Captions are always shown; when no speech engine is available this stays caption-only."
+        },
+        "botx.autoExplainErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically explain errors"
+        },
+        "botx.cooldownSeconds": {
+          "type": "number",
+          "default": 30,
+          "description": "Cooldown between suggestions in seconds"
+        },
+        "botx.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Launch the BotX Companion window automatically when the extension activates. When disabled, start it with the \"BotX: Show Companion\" command."
+        },
+        "botx.teachingMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the teaching ladder (nudge → hint → explain → fix). When off, Eve observes silently but explicit Ask Companion still works."
+        },
+        "botx.monitoring": {
+          "type": "boolean",
+          "default": true,
+          "description": "Master switch for passive companion processing (observation intake, teaching decisions, automatic Gemini explanations). When off, Eve only responds to explicit commands; learning data is preserved. Toggled by 'BotX: Toggle Monitoring'."
+        },
+        "botx.verbosity": {
+          "type": "string",
+          "enum": ["AUTO", "CONCISE", "BALANCED", "DETAILED"],
+          "default": "AUTO",
+          "description": "Explanation verbosity. AUTO adapts to skill level; explicit values override."
+        },
+        "botx.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Google AI Studio (Gemini) API key for Eve chat responses"
+        },
+        "acex.eveAutoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the floating Eve body automatically once the Brain server is listening. Eve is the canonical Ace.X body."
+        },
+        "acex.projectId": {
+          "type": "string",
+          "default": "",
+          "description": "Shared project identifier so separate developers/machines correlate to one project. Empty means the local workspace identity."
+        },
+        "acex.teamId": {
+          "type": "string",
+          "default": "",
+          "description": "Team identifier for shared project context. Empty means local-only mode."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "compile:test": "tsc -p tsconfig.test.json",
+    "watch": "tsc -watch -p ./",
+    "build": "tsc -p ./",
+    "stage:robot-webview": "node ./scripts/stage-robot-webview.js",
+    "package:body": "node ./scripts/stage-companion.js",
+    "package:vsix": "npm run build && node ./scripts/package-vsix.js",
+    "pretest": "npm run compile:test && npm run lint",
+    "lint": "eslint src",
+    "test": "node ./out/test/suite/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/vscode": "^1.125.0",
+    "@types/ws": "^8.18.1",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  },
+  "dependencies": {
+    "ws": "^8.21.1"
+  }
+}

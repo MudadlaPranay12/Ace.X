@@ -1,0 +1,23 @@
+{
+  "name": "digital-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified Sensory-Cognitive-Motor Robot Architecture monorepo",
+  "workspaces": [
+    "robot-brain",
+    "robot-body"
+  ],
+  "scripts": {
+    "install-all": "npm install",
+    "compile-brain": "npm run compile --workspace=robot-brain",
+    "watch-brain": "npm run watch --workspace=robot-brain",
+    "start-body": "npm run start --workspace=robot-body",
+    "package:body": "npm run package:body --workspace=robot-body && npm run package:body --workspace=robot-brain",
+    "package:vsix": "npm run package:vsix --workspace=robot-brain",
+    "dev": "npm run watch-brain"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^44.2.0"
+  }
+}

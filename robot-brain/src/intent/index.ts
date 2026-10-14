@@ -1,0 +1,1 @@
+export { detectCodingIntent, scanDocumentForCodingIntents, hasCodingIntentAtLine, CodingIntentResult } from './codingIntent';

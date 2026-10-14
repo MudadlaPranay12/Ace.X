@@ -1,0 +1,50 @@
+# This file is only used when running `vsce package` directly from this folder.
+# The supported packaging path is `npm run package:vsix`, which stages a clean
+# copy in a temp directory (scripts/package-vsix.js) and packages from there.
+
+# Sources and tooling — not needed at runtime
+.vscode/**
+.vscode-test/**
+.vscode-test.mjs
+src/**
+.gitignore
+.yarnrc
+**/tsconfig.json
+**/tsconfig.test.json
+**/eslint.config.mjs
+**/.vscode-test.*
+**/*.ts
+**/*.map
+out/test/**
+scripts/**
+docs/**
+
+# Docs
+vsc-extension-quickstart.md
+PROJECT_PLAN.md
+
+# Secrets — never ship these
+.env
+**/.env
+**/.env.*
+extracted-vsix*/**
+**/*.vsix
+
+# The repo is an npm workspace, so node_modules also holds devDependencies and
+# a junction back to this folder. `ws` is the only runtime dependency and must
+# ship, so ignore node_modules wholesale and re-include ws.
+#
+# `typescript` is intentionally NOT shipped (it is ~23 MB and nothing else needs
+# it at runtime). AST-based analysis resolves the compiler lazily from VS Code's
+# own bundled `vscode.typescript-language-features` extension — see
+# src/utils/typescriptApi.ts. Do not add it to node_modules here.
+node_modules/**
+!node_modules/ws/**
+
+# Staged VSIX output
+*.vsix
+
+# Logs / OS noise
+**/*.log
+.DS_Store
+Thumbs.db
